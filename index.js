@@ -34,12 +34,17 @@ async function run(){
       })
 
       
-    //   app.get('/users/admin/:email', async (req, res) => {
-    //     const email = req.params.email;
-    //     const query = { email }
-    //     const user = await usersCollection.findOne(query);
-    //     res.send({ isAdmin: user?.role === 'Admin' });
-    // })
+        app.get('/users/allbuyers', async (req, res) => {
+          const query = { role: 'Buyer' }
+          const users = await usersCollection.find(query).toArray();
+          res.send(users);
+      })
+        app.get('git ', async (req, res) => {
+          const query = { role: 'Seller' }
+          const users = await usersCollection.find(query).toArray();
+          res.send(users);
+      })
+
       app.get('/users/userrole/:email', async (req, res) => {
         const email = req.params.email;
         const query = { email }
