@@ -17,7 +17,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run(){
   try{
-      const userCollections = client.db('becheDaw').collection('users');
+      const usersCollection = client.db('becheDaw').collection('users');
       const productsCollections = client.db('becheDaw').collection('products');
       const bookedProductCollections = client.db('becheDaw').collection('bookProducts');
       
@@ -25,13 +25,27 @@ async function run(){
         const user = req.body;
         const userEmail = user.email;
         const query = { email: userEmail}
-        const savedUser = await userCollections.findOne(query);
+        const savedUser = await usersCollection.findOne(query);
         if(savedUser){
           return res.send({message: "Already added user"});
         }
-        const result = await userCollections.insertOne(user);
+        const result = await usersCollection.insertOne(user);
         res.send(result);
       })
+
+      
+    //   app.get('/users/admin/:email', async (req, res) => {
+    //     const email = req.params.email;
+    //     const query = { email }
+    //     const user = await usersCollection.findOne(query);
+    //     res.send({ isAdmin: user?.role === 'Admin' });
+    // })
+      app.get('/users/userrole/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { email }
+        const user = await usersCollection.findOne(query);
+        res.send({ userRole: user?.role });
+    })
 
       app.get('/products', async(req, res) => {
         let query = {};
@@ -44,7 +58,7 @@ async function run(){
      
       app.post('/bookedproducts', async(req, res) => {
         const product = req.body;
-        const query = {productId: product.productId};
+        const query = {productId: product.productId, userEmail: product.userEmail};
         const bookedProduct = await bookedProductCollections.findOne(query);
         if(bookedProduct){
           return res.send({message: "You've already booked this product."});
@@ -61,6 +75,8 @@ async function run(){
         const orders = await bookedProductCollections.find(query).toArray();
         res.send(orders);
       })
+
+
 
   }
 
