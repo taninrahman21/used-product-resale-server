@@ -11,19 +11,59 @@ app.use(express.json());
 
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { query } = require('express');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_pass}@cluster0.flsgo3q.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 async function run(){
   try{
       const userCollections = client.db('becheDaw').collection('users');
+      const productsCollections = client.db('becheDaw').collection('products');
+      const bookedProductCollections = client.db('becheDaw').collection('bookProducts');
       
       app.post('/users', async(req, res) => {
         const user = req.body;
+        const userEmail = user.email;
+        const query = { email: userEmail}
+        const savedUser = await userCollections.findOne(query);
+        if(savedUser){
+          return res.send({message: "Already added user"});
+        }
         const result = await userCollections.insertOne(user);
-        console.log(result);
+        res.send(result);
       })
+
+      app.get('/products', async(req, res) => {
+        let query = {};
+        if(req.query.category){
+          query = {brand: req.query.category};
+        }
+        const result = await productsCollections.find(query).toArray();
+        res.send(result);
+      })
+     
+      app.post('/bookedproducts', async(req, res) => {
+        const product = req.body;
+        const query = {productId: product.productId};
+        const bookedProduct = await bookedProductCollections.findOne(query);
+        if(bookedProduct){
+          return res.send({message: "You've already booked this product."});
+        }
+        const result = await bookedProductCollections.insertOne(product);
+        res.send(result);
+      })
+
+      app.get('/myorders', async(req, res) => {
+        let query = {};
+        if(req.query.email){
+          query ={ userEmail: req.query.email};
+        }
+        const orders = await bookedProductCollections.find(query).toArray();
+        res.send(orders);
+      })
+
   }
+
   finally{
 
   }
