@@ -66,7 +66,7 @@ async function run(){
         const result = await productsCollections.find(query).toArray();
         res.send(result);
       })
-      
+
       app.post('/products', async(req, res) => {
         let product = req.body;
         const result = await productsCollections.insertOne(product);
@@ -91,6 +91,15 @@ async function run(){
         }
         const orders = await bookedProductCollections.find(query).toArray();
         res.send(orders);
+      })
+
+      app.get('/myproducts', async(req, res) => {
+        let query = {};
+        if(req.query.email){
+          query ={ sellerEmail:  req.query.email};
+        }
+        const products = await productsCollections.find(query).toArray();
+        res.send(products);
       })
 
 
