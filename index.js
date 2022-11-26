@@ -39,12 +39,18 @@ async function run(){
           const users = await usersCollection.find(query).toArray();
           res.send(users);
       })
-        app.get('git ', async (req, res) => {
+        app.get('/users/allsellers', async (req, res) => {
           const query = { role: 'Seller' }
           const users = await usersCollection.find(query).toArray();
           res.send(users);
       })
 
+      app.get('/users/admin/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { email }
+        const user = await usersCollection.findOne(query);
+        res.send({ isAdmin: user?.role });
+    })
       app.get('/users/userrole/:email', async (req, res) => {
         const email = req.params.email;
         const query = { email }
@@ -58,6 +64,12 @@ async function run(){
           query = {brand: req.query.category};
         }
         const result = await productsCollections.find(query).toArray();
+        res.send(result);
+      })
+      
+      app.post('/products', async(req, res) => {
+        let product = req.body;
+        const result = await productsCollections.insertOne(product);
         res.send(result);
       })
      
