@@ -10,7 +10,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { query } = require('express');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_pass}@cluster0.flsgo3q.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -70,6 +70,25 @@ async function run(){
       app.post('/products', async(req, res) => {
         let product = req.body;
         const result = await productsCollections.insertOne(product);
+        res.send(result);
+      })
+
+      // Update Product
+      app.patch('/products/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id)};
+        const updateDoc = {
+          $set: { isAdvertised: true }
+        }
+        const result = await productsCollections.updateOne(filter, updateDoc);
+        res.send(result);
+      })
+
+      // Delete Product
+      app.delete('/products/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id)};
+        const result = await productsCollections.deleteOne(filter);
         res.send(result);
       })
      
