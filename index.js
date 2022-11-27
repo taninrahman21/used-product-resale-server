@@ -39,8 +39,8 @@ async function run(){
           const users = await usersCollection.find(query).toArray();
           res.send(users);
       })
-      // Get a user
-        app.get('/users/verify/:email', async (req, res) => {
+      // Get a seller
+        app.get('/users/seller/:email', async (req, res) => {
           const email = req.params.email;
           const query = { email }
           const user = await usersCollection.findOne(query);
@@ -77,17 +77,6 @@ async function run(){
           query = {brand: req.query.category};
         }
         const products = await productsCollections.find(query).toArray();
-        
-        // products.forEach(async(product) => {
-        //   const email = product?.sellerEmail;
-        //   const query = { email }
-        //   const user = await usersCollection.findOne(query);
-        //   if(user?.verified){
-        //     product.userVerification = user?.verified;
-        //     console.log(product);
-        //   }
-        // })
-
         res.send(products);
       })
 
@@ -127,6 +116,14 @@ async function run(){
         const result = await productsCollections.deleteOne(filter);
         res.send(result);
       })
+
+      // Delete BookedProduct
+      app.delete('/bookproducts/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id)};
+        const result = await bookedProductCollections.deleteOne(filter);
+        res.send(result);
+      })
      
       // Post user booked products
       app.post('/bookedproducts', async(req, res) => {
@@ -163,6 +160,13 @@ async function run(){
       // Get all advertised Products
       app.get('/advertisedProducts', async(req, res) => {
         const query = { isAdvertised: true };
+        const products = await productsCollections.find(query).toArray();
+        res.send(products);
+      })
+
+      // Get all reported Products
+      app.get('/reportedProducts', async(req, res) => {
+        const query = { isReported: true };
         const products = await productsCollections.find(query).toArray();
         res.send(products);
       })
