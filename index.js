@@ -33,24 +33,36 @@ async function run(){
         res.send(result);
       })
 
-      
+      // Get all buyers
         app.get('/users/allbuyers', async (req, res) => {
           const query = { role: 'Buyer' }
           const users = await usersCollection.find(query).toArray();
           res.send(users);
       })
+      // Get a user
+        app.get('/users/verify/:email', async (req, res) => {
+          const email = req.params.email;
+          const query = { email }
+          const user = await usersCollection.findOne(query);
+          res.send(user);
+      })
+
+        app.delete('/users/:id', async (req, res) => {
+          const id = req.params.id;
+          const query = { _id: ObjectId(id)}
+          const user = await usersCollection.deleteOne(query);
+          res.send(user);
+      })
+
+      // Get all sellers
         app.get('/users/allsellers', async (req, res) => {
           const query = { role: 'Seller' }
           const users = await usersCollection.find(query).toArray();
           res.send(users);
       })
 
-      app.get('/users/admin/:email', async (req, res) => {
-        const email = req.params.email;
-        const query = { email }
-        const user = await usersCollection.findOne(query);
-        res.send({ isAdmin: user?.role });
-    })
+
+    // Get User role and check isvarified
       app.get('/users/userrole/:email', async (req, res) => {
         const email = req.params.email;
         const query = { email }
@@ -58,15 +70,28 @@ async function run(){
         res.send({ userRole: user?.role });
     })
 
+    // Get all products by category
       app.get('/products', async(req, res) => {
         let query = {};
         if(req.query.category){
           query = {brand: req.query.category};
         }
-        const result = await productsCollections.find(query).toArray();
-        res.send(result);
+        const products = await productsCollections.find(query).toArray();
+        
+        // products.forEach(async(product) => {
+        //   const email = product?.sellerEmail;
+        //   const query = { email }
+        //   const user = await usersCollection.findOne(query);
+        //   if(user?.verified){
+        //     product.userVerification = user?.verified;
+        //     console.log(product);
+        //   }
+        // })
+
+        res.send(products);
       })
 
+      // Add products
       app.post('/products', async(req, res) => {
         let product = req.body;
         const result = await productsCollections.insertOne(product);
@@ -84,6 +109,17 @@ async function run(){
         res.send(result);
       })
 
+      // Update if product is reported
+      app.patch('/products/reported/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id)};
+        const updateDoc = {
+          $set: { isReported: true }
+        }
+        const result = await productsCollections.updateOne(filter, updateDoc);
+        res.send(result);
+      })
+
       // Delete Product
       app.delete('/products/:id', async(req, res) => {
         const id = req.params.id;
@@ -92,6 +128,7 @@ async function run(){
         res.send(result);
       })
      
+      // Post user booked products
       app.post('/bookedproducts', async(req, res) => {
         const product = req.body;
         const query = {productId: product.productId, userEmail: product.userEmail};
@@ -103,6 +140,7 @@ async function run(){
         res.send(result);
       })
 
+      // Get buyer booked products
       app.get('/myorders', async(req, res) => {
         let query = {};
         if(req.query.email){
@@ -112,6 +150,7 @@ async function run(){
         res.send(orders);
       })
 
+      // Get seller added products
       app.get('/myproducts', async(req, res) => {
         let query = {};
         if(req.query.email){
@@ -121,7 +160,23 @@ async function run(){
         res.send(products);
       })
 
+      // Get all advertised Products
+      app.get('/advertisedProducts', async(req, res) => {
+        const query = { isAdvertised: true };
+        const products = await productsCollections.find(query).toArray();
+        res.send(products);
+      })
 
+      // Varify a user
+      app.patch('/users/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: ObjectId(id)};
+        const updateDoc = {
+          $set: { verified: true }
+        }
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      })
 
   }
 
