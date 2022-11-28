@@ -60,7 +60,6 @@ async function run(){
         const decodedEmail = req.decoded.userEmail;
         const query = { email: decodedEmail };
         const user = await usersCollection.findOne(query);
-        console.log(user)
         
         if (user?.role !== 'Seller') {
             return res.status(403).send({ message: "Forbidden Access" })
@@ -251,7 +250,6 @@ async function run(){
             const token = jwt.sign({ userName: user.name, userEmail: user.email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
             return res.send({ accessToken: token });
         }
-        console.log("Hited")
         res.status(403).send({ accessToken: '' })
     });
 
