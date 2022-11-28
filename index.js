@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 const app = express();
+
 
 // middlewares
 app.use(cors());
@@ -15,12 +17,69 @@ const { query } = require('express');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_pass}@cluster0.flsgo3q.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+ // Verify JWT
+ function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+      return res.status(401).send("Unauthorized Access");
+  }
+  const token = authHeader.split(' ')[1];
+
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+      if (err) {
+          return res.status(403).send({ message: 'forbidden access' })
+      }
+      req.decoded = decoded;
+      next();
+  })
+}
+
+
+
 async function run(){
   try{
       const usersCollection = client.db('becheDaw').collection('users');
       const productsCollections = client.db('becheDaw').collection('products');
       const bookedProductCollections = client.db('becheDaw').collection('bookProducts');
       
+     
+      // Verify Buyer
+      const verifyBuyer = async (req, res, next) => {
+        const decodedEmail = req.decoded.userEmail;
+        const query = { email: decodedEmail };
+        const user = await usersCollection.findOne(query);
+        
+        if (user?.role !== 'Buyer') {
+            return res.status(403).send({ message: "Forbidden Access" })
+        }
+        next();
+    }
+      // Verify Seller
+      const verifySeller = async (req, res, next) => {
+        const decodedEmail = req.decoded.userEmail;
+        const query = { email: decodedEmail };
+        const user = await usersCollection.findOne(query);
+        console.log(user)
+        
+        if (user?.role !== 'Seller') {
+            return res.status(403).send({ message: "Forbidden Access" })
+        }
+        next();
+    }
+      // Verify Admin
+      const verifyAdmin = async (req, res, next) => {
+        const decodedEmail = req.decoded.userEmail;
+        const query = { email: decodedEmail };
+        const user = await usersCollection.findOne(query);
+
+        if (user?.role !== 'Admin') {
+            return res.status(403).send({ message: "Forbidden Access" })
+        }
+        next();
+    }
+
+      // Post a user
       app.post('/users', async(req, res) => {
         const user = req.body;
         const userEmail = user.email;
@@ -34,7 +93,7 @@ async function run(){
       })
 
       // Get all buyers
-        app.get('/users/allbuyers', async (req, res) => {
+        app.get('/users/allbuyers',verifyJWT, verifyAdmin, async (req, res) => {
           const query = { role: 'Buyer' }
           const users = await usersCollection.find(query).toArray();
           res.send(users);
@@ -55,9 +114,10 @@ async function run(){
       })
 
       // Get all sellers
-        app.get('/users/allsellers', async (req, res) => {
+        app.get('/users/allsellers', verifyJWT, verifyAdmin,  async (req, res) => { 
           const query = { role: 'Seller' }
           const users = await usersCollection.find(query).toArray();
+          console.log(users);
           res.send(users);
       })
 
@@ -88,7 +148,7 @@ async function run(){
       })
 
       // Update Product
-      app.patch('/products/:id', async(req, res) => {
+      app.patch('/products/:id',verifyJWT, verifySeller, async(req, res) => {
         const id = req.params.id;
         const filter = {_id: ObjectId(id)};
         const updateDoc = {
@@ -138,7 +198,7 @@ async function run(){
       })
 
       // Get buyer booked products
-      app.get('/myorders', async(req, res) => {
+      app.get('/myorders', verifyJWT, verifyBuyer, async(req, res) => {
         let query = {};
         if(req.query.email){
           query ={ userEmail: req.query.email};
@@ -172,7 +232,7 @@ async function run(){
       })
 
       // Varify a user
-      app.patch('/users/:id', async(req, res) => {
+      app.patch('/users/:id',verifyJWT, verifyAdmin, async(req, res) => {
         const id = req.params.id;
         const filter = {_id: ObjectId(id)};
         const updateDoc = {
@@ -181,6 +241,19 @@ async function run(){
         const result = await usersCollection.updateOne(filter, updateDoc);
         res.send(result);
       })
+
+      // Json Web Token
+      app.get('/jwt', async (req, res) => {
+        const email = req.query.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        if (user) {
+            const token = jwt.sign({ userName: user.name, userEmail: user.email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+            return res.send({ accessToken: token });
+        }
+        console.log("Hited")
+        res.status(403).send({ accessToken: '' })
+    });
 
   }
 
